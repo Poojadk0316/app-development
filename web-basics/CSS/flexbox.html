@@ -5,14 +5,24 @@
     <style>
         .container {
             display: flex;
+            flex-direction: column;
             justify-content: space-between;
-            bcakground-color: lightgray;
+            background-color: lightgray;
         }
+        .container > div {
+            background-color: #4CAF50;
+            color: white;
+            width: 100px;
+            margin: 10px;
+            text-align: center;
+            line-height: 75px;
+            font-size: 30px;
+        }   
     </style>
-    <body>
-        <div class="container">
-            <div>Item 1</div>
-            <div>Item 2</div>
+
+    <div class="container">
+        <div>Item 1</div>
+        <div>Item 2</div>
             <div>Item 3</div>
             <div>Item 4</div>
             <div>Item 5</div>   
