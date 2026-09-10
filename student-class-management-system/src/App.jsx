@@ -1,24 +1,15 @@
 import Navbar from "./components/navbar";
-import Startcard from "./components/startcard";
 import Welcome from "./components/welcome";
-import TaskCard from "./components/taskcard"; import Dashboard from "./components/dashboard"; 
-import './App.css';
-
-
+import Dashboard from "./components/dashboard";
 
 function App() {
-  return (
-    <div>
-      
-      <Navbar />
-      <Welcome /> 
-      <Dashboard />
-      
-      
-
-    </div>
-  );
-
-
+    return (
+        <>
+            <Navbar />
+            <Welcome />
+            <Dashboard />
+        </>
+    );
 }
+
 export default App;

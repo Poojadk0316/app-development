@@ -1,12 +1,40 @@
-function TaskCard({ title, description, status, link }) {
+function TaskCard({
+    title,
+    description,
+    status,
+    link,
+    onChangeStatus
+}) {
+
     return (
-        <a href={link} className="task-card">
-            <div>
+        <div className="task-card">
+
+            <div className="task-info">
+
                 <h3>{title}</h3>
+
                 <p>{description}</p>
-                <p>Status: {status}</p>
+
+                <span className={`task-status ${status
+                    .toLowerCase()
+                    .replace(" ", "-")}`}>
+                    {status}
+                </span>
+
             </div>
-        </a>
+
+            <div className="task-actions">
+
+                <button
+                    className="change-status-btn"
+                    onClick={onChangeStatus}
+                >
+                    Change Status
+                </button>
+
+            </div>
+
+        </div>
     );
 }
 

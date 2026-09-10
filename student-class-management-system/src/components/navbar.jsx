@@ -9,6 +9,7 @@ function Navbar() {
 
             <div className="nav-links">
                 <a href="/">Tasks</a>
+                <a href="/">home</a>
                 <a href="/students">Dashboard</a>
             </div>
 

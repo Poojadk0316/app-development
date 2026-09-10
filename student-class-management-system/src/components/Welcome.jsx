@@ -1,26 +1,17 @@
 function Welcome() {
     return (
-        <section className="welcome">
+        <div className="welcome-section">
+            <h1>Hello, Student!</h1>
 
-            <div className="welcome-content">
+            <p>
+                Stay organized, complete your tasks,
+                and keep moving toward your goals.
+            </p>
 
-                <h1>
-                    Hello, Student!
-                </h1>
-
-                <p className="welcome-text">
-                    Stay organized, complete your tasks,
-                    and keep moving toward your goals.
-                </p>
-
-                <button className="welcome-btn">
-                    View My Tasks
-                </button>
-            </div>
-
-            
-
-        </section>
+            <button className="welcome-btn">
+                View My Tasks
+            </button>
+        </div>
     );
 }
 

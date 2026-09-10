@@ -1,44 +1,40 @@
-function Startcard() {
+function StatCard({
+    title,
+    value,
+    icon,
+    type
+}) {
+
     return (
-        <div className="stats-grid">
+        <div className={`stat-card ${type}`}>
 
-            {/* Total Tasks */}
-            <div className="stat-card">
-                <div className="stat-icon">📋</div>
+            <div className="stat-card-top">
 
-                <div>
-                    <p>Total Tasks</p>
-                    <h2>24</h2>
-                    <span>All assigned tasks</span>
+                <div className="stat-icon">
+                    {icon}
                 </div>
+
+                <div className="stat-arrow">
+                    ↗
+                </div>
+
             </div>
 
 
-            {/* Completed Tasks */}
-            <div className="stat-card">
-                <div className="stat-icon completed-icon">✓</div>
+            <div className="stat-info">
 
-                <div>
-                    <p>Completed Tasks</p>
-                    <h2>16</h2>
-                    <span>Tasks completed</span>
-                </div>
-            </div>
+                <p>
+                    {title}
+                </p>
 
+                <h3>
+                    {value}
+                </h3>
 
-            {/* Pending Tasks */}
-            <div className="stat-card">
-                <div className="stat-icon pending-icon">⏳</div>
-
-                <div>
-                    <p>Pending Tasks</p>
-                    <h2>8</h2>
-                    <span>Tasks remaining</span>
-                </div>
             </div>
 
         </div>
     );
 }
 
-export default Startcard;
+export default StatCard;

@@ -1,93 +1,150 @@
+import { useState } from "react";
 import Startcard from "./startcard";
 import TaskCard from "./taskcard";
+import AddTask from "./addtask";
 
 function Dashboard() {
 
-    // Tasks shown in My Tasks section
-    const tasks = [
-    {
-        title: "Learn React",
-        description: "Understand components",
-        status: "In Progress",
-        link: "/tasks/learn-react"
-    },
-    {
-        title: "Software Engineering",
-        description: "Project Management Assignment",
-        status: "Pending",
-        link: "/tasks/software-engineering"
-    },
-    {
-        title: "Theory of Computation",
-        description: "Group Project",
-        status: "Pending",
-        link: "/tasks/theory-of-computation"
-    },
-    {
-        title: "Research Methodology",
-        description: "Literature Assignment",
-        status: "Pending",
-        link: "/tasks/research-methodology"
-    },
-    {
-        title: "Computer Networks",
-        description: "Network Protocols Assignment",
-        status: "Pending",
-        link: "/tasks/computer-networks"
-    },
-    {
-        title: "Artificial Intelligence",
-        description: "AI Fundamentals Assignment",
-        status: "Pending",
-        link: "/tasks/artificial-intelligence"
-    },
-    {
-        title: "Environmental Studies",
-        description: "Environmental Issues Assignment",
-        status: "Pending",
-        link: "/tasks/evs"
-    },
-    {
-        title: "NSS",
-        description: "NSS Activities and Assignment",
-        status: "Pending",
-        link: "/tasks/nss"
-    }
-];
+    const [tasks, setTasks] = useState([
+        {
+            id: 1,
+            title: "Learn React",
+            description: "Understand components",
+            status: "In Progress",
+            link: "/tasks/learn-react"
+        },
+        { id: 2, title: "Learn MongoDB", description: "Create a simple React app", status: "Pending" },
+
+        { id: 3, title: "Deploy App", description: "Host the app on a platform", status: "Completed" },
+    ]);
+
+    const [showAddTask, setShowAddTask] = useState(false);
+
+
+    // Change task status
+    const changeStatus = (id) => {
+
+        setTasks((prevTasks) =>
+            prevTasks.map((task) => {
+
+                if (task.id === id) {
+
+                    let newStatus;
+
+                    if (task.status === "Pending") {
+                        newStatus = "In Progress";
+                    }
+                    else if (task.status === "In Progress") {
+                        newStatus = "Completed";
+                    }
+                    else {
+                        newStatus = "Pending";
+                    }
+
+                    return {
+                        ...task,
+                        status: newStatus
+                    };
+                }
+
+                return task;
+            })
+        );
+    };
+
+
+    // Add new task
+    const addTask = (newTask) => {
+
+        setTasks((prevTasks) => [
+            ...prevTasks,
+            {
+                ...newTask,
+                id: Date.now()
+            }
+        ]);
+
+        setShowAddTask(false);
+    };
+
+
+    // Task statistics
+    const totalTasks = tasks.length;
+
+    const completedTasks = tasks.filter(
+        (task) => task.status === "Completed"
+    ).length;
+
+    const pendingTasks = tasks.filter(
+        (task) => task.status === "Pending"
+    ).length;
+
+    const inProgressTasks = tasks.filter(
+        (task) => task.status === "In Progress"
+    ).length;
+
+
     return (
         <div className="dashboard">
 
             {/* ================= HEADER ================= */}
+
             <div className="dashboard-header">
 
                 <div>
                     <h1>Dashboard</h1>
+
                     <p>
                         Welcome back! Here's an overview of your tasks.
                     </p>
                 </div>
 
-                <button className="add-task-btn">
+                <button
+                    className="add-task-btn"
+                    onClick={() => setShowAddTask(true)}
+                >
                     + Add Task
                 </button>
 
             </div>
 
 
+            {/* ================= ADD TASK ================= */}
+
+            {showAddTask && (
+                <AddTask
+                    onAddTask={addTask}
+                    onClose={() => setShowAddTask(false)}
+                />
+            )}
+
+
             {/* ================= SUMMARY CARDS ================= */}
+
             <div className="startcard">
-                <Startcard />
+
+                <Startcard
+                    totalTasks={totalTasks}
+                    completedTasks={completedTasks}
+                    pendingTasks={pendingTasks}
+                    inProgressTasks={inProgressTasks}
+                />
+
             </div>
 
 
             {/* ================= MY TASKS ================= */}
+
             <div className="task-section">
 
                 <div className="section-header">
 
                     <div>
                         <h2>My Tasks</h2>
-                        <p>Manage your pending and completed tasks</p>
+
+                        <p>
+                            Manage your pending and completed tasks
+                        </p>
                     </div>
 
                     <button className="view-all-btn">
@@ -98,16 +155,22 @@ function Dashboard() {
 
 
                 {/* Task Grid */}
+
                 <div className="task-container">
 
-                    {tasks.map((task, index) => (
+                    {tasks.map((task) => (
+
                         <TaskCard
-                            key={index}
+                            key={task.id}
                             title={task.title}
                             description={task.description}
                             status={task.status}
                             link={task.link}
+                            onChangeStatus={() =>
+                                changeStatus(task.id)
+                            }
                         />
+
                     ))}
 
                 </div>
@@ -116,15 +179,14 @@ function Dashboard() {
 
 
             {/* ================= UPCOMING DEADLINES ================= */}
+
             <div className="deadline-section">
 
                 <h2>Upcoming Deadlines</h2>
 
                 <div className="deadline-list">
 
-
-                    {/* Software Engineering */}
-                    <div className="deadline-card">
+                <div className="deadline-card">
 
                         <div>
                             <h3>
@@ -143,8 +205,7 @@ function Dashboard() {
                     </div>
 
 
-                    {/* Theory of Computation */}
-                    <div className="deadline-card">
+                  <div className="deadline-card">
 
                         <div>
                             <h3>
@@ -163,8 +224,7 @@ function Dashboard() {
                     </div>
 
 
-                    {/* Research Methodology */}
-                    <div className="deadline-card">
+                 <div className="deadline-card">
 
                         <div>
                             <h3>
@@ -183,8 +243,7 @@ function Dashboard() {
                     </div>
 
 
-                    {/* Computer Networks */}
-                    <div className="deadline-card">
+                  <div className="deadline-card">
 
                         <div>
                             <h3>
@@ -203,8 +262,7 @@ function Dashboard() {
                     </div>
 
 
-                    {/* Artificial Intelligence */}
-                    <div className="deadline-card">
+                  <div className="deadline-card">
 
                         <div>
                             <h3>
@@ -223,8 +281,7 @@ function Dashboard() {
                     </div>
 
 
-                    {/* Environmental Studies */}
-                    <div className="deadline-card">
+                  <div className="deadline-card">
 
                         <div>
                             <h3>
