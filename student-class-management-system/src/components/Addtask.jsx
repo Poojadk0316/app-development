@@ -7,6 +7,7 @@ function AddTask({ onAddTask, onClose }) {
     const [status, setStatus] = useState("Pending");
 
     const handleSubmit = (e) => {
+
         e.preventDefault();
 
         if (title.trim() === "") {
@@ -15,9 +16,9 @@ function AddTask({ onAddTask, onClose }) {
         }
 
         onAddTask({
-            title: title,
-            description: description,
-            status: status
+            title,
+            description,
+            status
         });
 
         setTitle("");
@@ -26,141 +27,71 @@ function AddTask({ onAddTask, onClose }) {
     };
 
     return (
-        <div className="add-task-page">
 
-            <div className="add-task-card">
+        <div className="add-task-form">
 
-                {/* Header */}
+            <h2>
+                Add New Task
+            </h2>
 
-                <div className="add-task-header">
+            <form onSubmit={handleSubmit}>
 
-                    <div>
-                        <span className="add-task-label">
-                            NEW TASK
-                        </span>
+                <input
+                    type="text"
+                    placeholder="Task title"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                />
 
-                        <h2>Add New Task</h2>
+                <textarea
+                    placeholder="Task description"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                />
 
-                        <p>
-                            Create a new task and keep your work organized.
-                        </p>
-                    </div>
+                <select
+                    value={status}
+                    onChange={(e) => setStatus(e.target.value)}
+                >
+
+                    <option value="Pending">
+                        Pending
+                    </option>
+
+                    <option value="In Progress">
+                        In Progress
+                    </option>
+
+                    <option value="Completed">
+                        Completed
+                    </option>
+
+                </select>
+
+
+                <div className="form-buttons">
+
+                    <button
+                        type="submit"
+                        className="save-task-btn"
+                    >
+                        Add Task
+                    </button>
 
                     <button
                         type="button"
-                        className="close-btn"
+                        className="cancel-task-btn"
                         onClick={onClose}
                     >
-                        ×
+                        Cancel
                     </button>
 
                 </div>
 
-
-                {/* Form */}
-
-                <form onSubmit={handleSubmit}>
-
-                    {/* Task Title */}
-
-                    <div className="form-group">
-
-                        <label htmlFor="task-title">
-                            Task Title
-                        </label>
-
-                        <input
-                            id="task-title"
-                            type="text"
-                            placeholder="Enter task title"
-                            value={title}
-                            onChange={(e) =>
-                                setTitle(e.target.value)
-                            }
-                        />
-
-                    </div>
-
-
-                    {/* Description */}
-
-                    <div className="form-group">
-
-                        <label htmlFor="task-description">
-                            Description
-                        </label>
-
-                        <textarea
-                            id="task-description"
-                            placeholder="Enter task description"
-                            value={description}
-                            onChange={(e) =>
-                                setDescription(e.target.value)
-                            }
-                        />
-
-                    </div>
-
-
-                    {/* Status */}
-
-                    <div className="form-group">
-
-                        <label htmlFor="task-status">
-                            Status
-                        </label>
-
-                        <select
-                            id="task-status"
-                            value={status}
-                            onChange={(e) =>
-                                setStatus(e.target.value)
-                            }
-                        >
-
-                            <option value="Pending">
-                                Pending
-                            </option>
-
-                            <option value="In Progress">
-                                In Progress
-                            </option>
-
-                            <option value="Completed">
-                                Completed
-                            </option>
-
-                        </select>
-
-                    </div>
-
-
-                    {/* Buttons */}
-
-                    <div className="form-buttons">
-
-                        <button
-                            type="button"
-                            className="cancel-btn"
-                            onClick={onClose}
-                        >
-                            Cancel
-                        </button>
-
-                        <button
-                            type="submit"
-                            className="save-task-btn"
-                        >
-                            + Add Task
-                        </button>
-
-                    </div>
-
-                </form>
-
-            </div>
+            </form>
 
         </div>
+
     );
 }
 

@@ -1,19 +1,29 @@
+import { Link } from "react-router-dom";
+
 function Navbar() {
+
     return (
+
         <nav className="navbar">
 
             <div className="welcome-text">
-                
-                <a href="/">Welcome Student!!</a>
+                Student Task Manager
             </div>
 
             <div className="nav-links">
-                <a href="/">Tasks</a>
-                <a href="/">home</a>
-                <a href="/students">Dashboard</a>
+
+                <Link to="/dashboard">
+                    Dashboard
+                </Link>
+
+                <Link to="/tasks">
+                    Tasks
+                </Link>
+
             </div>
 
         </nav>
+
     );
 }
 
