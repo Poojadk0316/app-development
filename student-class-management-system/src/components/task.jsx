@@ -11,47 +11,71 @@ function Task({
 
     const [showAddTask, setShowAddTask] = useState(false);
 
+
+    // ADD NEW TASK
     const handleAddTask = (newTask) => {
 
         addTask(newTask);
 
         setShowAddTask(false);
+
     };
 
-    return (
 
+    return (
         <div className="tasks-page">
 
+            {/* PAGE HEADER */}
             <div className="tasks-header">
 
-                <h1>
-                    My Tasks
-                </h1>
+                <div>
 
-                <p>
-                    Manage all your tasks in one place
-                </p>
+                    <p className="page-label">
+                        TASK MANAGEMENT
+                    </p>
 
+                    <h1>
+                        My Tasks
+                    </h1>
+
+                    <p>
+                        Manage your tasks and track your progress.
+                    </p>
+
+                </div>
+
+
+                {/* ADD TASK BUTTON */}
                 <button
                     type="button"
-                    className="add-task-btn"
-                    onClick={() => setShowAddTask(true)}
+                    className="add-task-button"
+                    onClick={() =>
+                        setShowAddTask(!showAddTask)
+                    }
                 >
-                    + Add Task
+                    {showAddTask
+                        ? "✕ Close"
+                        : "+ Add Task"}
                 </button>
 
             </div>
 
 
+            {/* ADD TASK FORM */}
+
             {showAddTask && (
 
                 <AddTask
                     onAddTask={handleAddTask}
-                    onClose={() => setShowAddTask(false)}
+                    onClose={() =>
+                        setShowAddTask(false)
+                    }
                 />
 
             )}
 
+
+            {/* TASK SECTION */}
 
             <div className="task-section">
 
@@ -61,38 +85,33 @@ function Task({
                         All Tasks
                     </h2>
 
-                    <p>
-                        Manage your pending and completed tasks
-                    </p>
+                    <span className="task-count">
+                        {tasks.length} Tasks
+                    </span>
 
                 </div>
 
+
+                {/* TASK LIST */}
 
                 <div className="task-container">
 
                     {tasks.length === 0 ? (
 
-                        <div className="no-tasks">
+                        <div className="empty-tasks">
 
-                            <div className="no-tasks-icon">
+                            <div className="empty-icon">
                                 📋
                             </div>
 
-                            <h3>
-                                No tasks available
-                            </h3>
+                            <h2>
+                                No Tasks Yet
+                            </h2>
 
                             <p>
-                                Add a new task to get started.
+                                Click "Add Task" to create
+                                your first task.
                             </p>
-
-                            <button
-                                type="button"
-                                className="add-task-btn"
-                                onClick={() => setShowAddTask(true)}
-                            >
-                                + Add Your First Task
-                            </button>
 
                         </div>
 
@@ -106,8 +125,12 @@ function Task({
                                 title={task.title}
                                 description={task.description}
                                 status={task.status}
-                                onChangeStatus={changeStatus}
-                                onDelete={deleteTask}
+                                onToggle={() =>
+                                    changeStatus(task.id)
+                                }
+                                onDelete={() =>
+                                    deleteTask(task.id)
+                                }
                             />
 
                         ))
@@ -119,7 +142,6 @@ function Task({
             </div>
 
         </div>
-
     );
 }
 

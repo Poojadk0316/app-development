@@ -1,59 +1,89 @@
+import { Link } from "react-router-dom";
+
 function TaskCard({
     id,
     title,
     description,
     status,
-    onChangeStatus,
+    onToggle,
     onDelete
 }) {
 
     return (
-
         <div className="task-card">
 
-            <div className="task-card-content">
+            {/* Left side */}
+            <div className="task-card-left">
 
-                <h3>
-                    {title}
-                </h3>
+                <div className="task-check">
 
-                <p>
-                    {description}
-                </p>
+                    {status === "Completed" && "✓"}
 
-                <span
-                    className={`status-badge ${status
-                        .toLowerCase()
-                        .replace(" ", "-")}`}
-                >
-                    {status}
-                </span>
+                </div>
+
+
+                <div className="task-card-content">
+
+                    <span className="task-id">
+                        TASK #{id}
+                    </span>
+
+                    <h3>
+                        {title}
+                    </h3>
+
+                    <p>
+                        {description}
+                    </p>
+
+                </div>
 
             </div>
 
 
+            {/* Status */}
+            <span
+                className={`status-badge ${
+                    status
+                        .toLowerCase()
+                        .replace(" ", "-")
+                }`}
+            >
+                {status}
+            </span>
+
+
+            {/* Buttons */}
             <div className="task-actions">
 
                 <button
                     type="button"
                     className="change-status-btn"
-                    onClick={() => onChangeStatus(id)}
+                    onClick={onToggle}
                 >
                     Change Status
                 </button>
 
+
+                <Link
+                    to={`/tasks/${id}`}
+                    className="details-btn"
+                >
+                    View Details →
+                </Link>
+
+
                 <button
                     type="button"
                     className="delete-task-btn"
-                    onClick={() => onDelete(id)}
+                    onClick={onDelete}
                 >
-                    Delete Task
+                    Delete
                 </button>
 
             </div>
 
-        </div>
-
+    </div>
     );
 }
 

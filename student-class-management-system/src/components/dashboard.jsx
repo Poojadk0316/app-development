@@ -1,14 +1,6 @@
-import { useNavigate } from "react-router-dom";
-
 function Dashboard({ tasks }) {
 
-    const navigate = useNavigate();
-
     const totalTasks = tasks.length;
-
-    const completedTasks = tasks.filter(
-        (task) => task.status === "Completed"
-    ).length;
 
     const pendingTasks = tasks.filter(
         (task) => task.status === "Pending"
@@ -18,25 +10,35 @@ function Dashboard({ tasks }) {
         (task) => task.status === "In Progress"
     ).length;
 
-    return (
+    const completedTasks = tasks.filter(
+        (task) => task.status === "Completed"
+    ).length;
 
+    return (
         <div className="dashboard-page">
 
+            {/* Dashboard Heading */}
             <div className="dashboard-header">
 
+                <p className="page-label">
+                    DASHBOARD
+                </p>
+
                 <h1>
-                    Welcome Back! 
+                    Task Dashboard
                 </h1>
 
                 <p>
-                    Here's an overview of your tasks
+                    Track your task progress at a glance.
                 </p>
 
             </div>
 
 
+            {/* Statistics */}
             <div className="dashboard-stats">
 
+                {/* Total */}
                 <div className="stat-card">
 
                     <div className="stat-icon">
@@ -54,6 +56,7 @@ function Dashboard({ tasks }) {
                 </div>
 
 
+                {/* Pending */}
                 <div className="stat-card">
 
                     <div className="stat-icon">
@@ -71,6 +74,7 @@ function Dashboard({ tasks }) {
                 </div>
 
 
+                {/* In Progress */}
                 <div className="stat-card">
 
                     <div className="stat-icon">
@@ -88,10 +92,11 @@ function Dashboard({ tasks }) {
                 </div>
 
 
+                {/* Completed */}
                 <div className="stat-card">
 
                     <div className="stat-icon">
-                        ✅
+                        ✓
                     </div>
 
                     <h3>
@@ -106,29 +111,7 @@ function Dashboard({ tasks }) {
 
             </div>
 
-
-            <div className="dashboard-action">
-
-                <h2>
-                    Manage Your Tasks
-                </h2>
-
-                <p>
-                    Add new tasks, update their status and keep track of your progress.
-                </p>
-
-                <button
-                    type="button"
-                    className="view-tasks-btn"
-                    onClick={() => navigate("/tasks")}
-                >
-                    View All Tasks →
-                </button>
-
-            </div>
-
         </div>
-
     );
 }
 

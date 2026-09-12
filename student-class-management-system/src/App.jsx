@@ -1,90 +1,101 @@
-import { useState } from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import "./App.css";
+import { useEffect, useState } from "react";
+import { Routes, Route } from "react-router-dom";
 
 import Navbar from "./components/navbar";
+import Welcome from "./components/welcome";
 import Dashboard from "./components/dashboard";
 import Task from "./components/task";
+import TaskDetails from "./components/taskdetails";
 
 function App() {
 
-    const [tasks, setTasks] = useState([
-        {
-            id: 1,
-            title: "Learn React",
-            description: "Understand React components",
-            status: "In Progress"
-        },
-        {
-            id: 2,
-            title: "Learn MongoDB",
-            description: "Create a simple React application",
-            status: "Pending"
-        },
-        {
-            id: 3,
-            title: "Deploy App",
-            description: "Host the application online",
-            status: "Completed"
-        }
-    ]);
+    const [tasks, setTasks] = useState([]);
 
-    const changeStatus = (id) => {
+    useEffect(() => {
 
-        setTasks((prevTasks) =>
-            prevTasks.map((task) => {
+        fetch("http://localhost:5000/api/tasks")
+            .then((response) => response.json())
+            .then((data) => {
 
-                if (task.id !== id) {
-                    return task;
-                }
+                console.log(data);
 
-                let newStatus;
+                setTasks(data);
 
-                if (task.status === "Pending") {
-                    newStatus = "In Progress";
-                }
-                else if (task.status === "In Progress") {
-                    newStatus = "Completed";
-                }
-                else {
-                    newStatus = "Pending";
-                }
-
-                return {
-                    ...task,
-                    status: newStatus
-                };
             })
-        );
-    };
+            .catch((error) => {
 
-    const deleteTask = (id) => {
+                console.log("Error:", error);
 
-        setTasks((prevTasks) =>
-            prevTasks.filter((task) => task.id !== id)
-        );
-    };
+            });
+
+    }, []);
+
 
     const addTask = (newTask) => {
 
-        setTasks((prevTasks) => [
-            ...prevTasks,
-            {
-                ...newTask,
-                id: Date.now()
-            }
+        setTasks((previousTasks) => [
+            ...previousTasks,
+            newTask
         ]);
+
     };
 
-    return (
-        <BrowserRouter>
 
+    const changeStatus = (id) => {
+
+        setTasks((previousTasks) =>
+            previousTasks.map((task) => {
+
+                if (task.id === id) {
+
+                    if (task.status === "Pending") {
+                        return {
+                            ...task,
+                            status: "In Progress"
+                        };
+                    }
+
+                    if (task.status === "In Progress") {
+                        return {
+                            ...task,
+                            status: "Completed"
+                        };
+                    }
+
+                    return {
+                        ...task,
+                        status: "Pending"
+                    };
+                }
+
+                return task;
+            })
+        );
+
+    };
+
+
+    const deleteTask = (id) => {
+
+        setTasks((previousTasks) =>
+            previousTasks.filter(
+                (task) => task.id !== id
+            )
+        );
+
+    };
+
+
+    return (
+        <>
             <Navbar />
 
             <Routes>
 
                 <Route
                     path="/"
-                    element={<Navigate to="/dashboard" />}
+                    element={<Welcome />}
                 />
 
                 <Route
@@ -106,9 +117,15 @@ function App() {
                     }
                 />
 
-            </Routes>
+                <Route
+                    path="/tasks/:id"
+                    element={
+                        <TaskDetails tasks={tasks} />
+                    }
+                />
 
-        </BrowserRouter>
+            </Routes>
+        </>
     );
 }
 
