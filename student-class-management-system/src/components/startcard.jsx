@@ -1,38 +1,8 @@
-function StatCard({
-    title,
-    value,
-    icon,
-    type
-}) {
-
+function StatCard(props) {
     return (
-        <div className={`stat-card ${type}`}>
-
-            <div className="stat-card-top">
-
-                <div className="stat-icon">
-                    {icon}
-                </div>
-
-                <div className="stat-arrow">
-                    ↗
-                </div>
-
-            </div>
-
-
-            <div className="stat-info">
-
-                <p>
-                    {title}
-                </p>
-
-                <h3>
-                    {value}
-                </h3>
-
-            </div>
-
+        <div className="stat-card">
+            <h3>{props.title}</h3>
+            <h2>{props.value}</h2>
         </div>
     );
 }

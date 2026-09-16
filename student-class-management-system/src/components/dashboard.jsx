@@ -1,117 +1,167 @@
-function Dashboard({ tasks }) {
+import StatCard from "./startcard";
+import TaskCard from "./taskcard";
+import AddTask from "./addtask";
 
-    const totalTasks = tasks.length;
+function Dashboard(props) {
 
-    const pendingTasks = tasks.filter(
-        (task) => task.status === "Pending"
-    ).length;
+    // Change task status
+    const toggleTask = async (id) => {
 
-    const inProgressTasks = tasks.filter(
-        (task) => task.status === "In Progress"
-    ).length;
+        const task = props.tasks.find((task) => task.id === id);
 
-    const completedTasks = tasks.filter(
+        if (!task) {
+            return;
+        }
+
+        const newStatus =
+            task.status === "Completed"
+                ? "Pending"
+                : "Completed";
+
+        try {
+
+            const response = await fetch(
+                `http://localhost:5000/api/tasks/${id}`,
+                {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        status: newStatus
+                    })
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error("Failed to update task");
+            }
+
+            const updatedTask = await response.json();
+
+            props.setTasks(
+                props.tasks.map((task) => {
+                    if (task.id === id) {
+                        return updatedTask;
+                    }
+
+                    return task;
+                })
+            );
+
+        } catch (error) {
+            console.log("Error updating task:", error);
+        }
+    };
+
+
+    // Add new task
+    const addTask = (newTask) => {
+
+        props.setTasks([
+            ...props.tasks,
+            newTask
+        ]);
+    };
+
+
+    // Delete task
+    const deleteTask = async (id) => {
+
+        try {
+
+            const response = await fetch(
+                `http://localhost:5000/api/tasks/${id}`,
+                {
+                    method: "DELETE"
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error("Failed to delete task");
+            }
+
+            const deletedTask = await response.json();
+
+            props.setTasks(
+                props.tasks.filter(
+                    (task) => task.id !== deletedTask.id
+                )
+            );
+
+        } catch (error) {
+            console.log("Error deleting task:", error);
+        }
+    };
+
+
+    // Calculate statistics
+    const totalTasks = props.tasks.length;
+
+    const completedTasks = props.tasks.filter(
         (task) => task.status === "Completed"
     ).length;
 
+    const pendingTasks = props.tasks.filter(
+        (task) => task.status === "Pending"
+    ).length;
+
+
     return (
-        <div className="dashboard-page">
+        <main>
 
-            {/* Dashboard Heading */}
-            <div className="dashboard-header">
+            {/* ================= STATS ================= */}
 
-                <p className="page-label">
-                    DASHBOARD
-                </p>
+            <div className="stats-container">
 
-                <h1>
-                    Task Dashboard
-                </h1>
+                <StatCard
+                    title="Total Tasks"
+                    value={totalTasks}
+                />
 
-                <p>
-                    Track your task progress at a glance.
-                </p>
+                <StatCard
+                    title="Completed"
+                    value={completedTasks}
+                />
 
-            </div>
-
-
-            {/* Statistics */}
-            <div className="dashboard-stats">
-
-                {/* Total */}
-                <div className="stat-card">
-
-                    <div className="stat-icon">
-                        📋
-                    </div>
-
-                    <h3>
-                        Total Tasks
-                    </h3>
-
-                    <h2>
-                        {totalTasks}
-                    </h2>
-
-                </div>
-
-
-                {/* Pending */}
-                <div className="stat-card">
-
-                    <div className="stat-icon">
-                        ⏳
-                    </div>
-
-                    <h3>
-                        Pending
-                    </h3>
-
-                    <h2>
-                        {pendingTasks}
-                    </h2>
-
-                </div>
-
-
-                {/* In Progress */}
-                <div className="stat-card">
-
-                    <div className="stat-icon">
-                        🔄
-                    </div>
-
-                    <h3>
-                        In Progress
-                    </h3>
-
-                    <h2>
-                        {inProgressTasks}
-                    </h2>
-
-                </div>
-
-
-                {/* Completed */}
-                <div className="stat-card">
-
-                    <div className="stat-icon">
-                        ✓
-                    </div>
-
-                    <h3>
-                        Completed
-                    </h3>
-
-                    <h2>
-                        {completedTasks}
-                    </h2>
-
-                </div>
+                <StatCard
+                    title="Pending"
+                    value={pendingTasks}
+                />
 
             </div>
 
-        </div>
+
+            {/* ================= ADD TASK ================= */}
+
+            <AddTask
+                onAddTask={addTask}
+            />
+
+
+            {/* ================= RECENT TASKS ================= */}
+
+            <h2>Recent Tasks</h2>
+
+            <div className="tasks-container">
+
+                {props.tasks.map((task) => (
+
+                    <TaskCard
+                        key={task.id}
+                        id={task.id}
+                        title={task.title}
+                        description={task.description}
+                        status={task.status}
+                        onToggle={() => toggleTask(task.id)}
+                        onDelete={() => deleteTask(task.id)}
+                    />
+
+                ))}
+
+            </div>
+
+        </main>
     );
 }
 

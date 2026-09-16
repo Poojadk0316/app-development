@@ -1,130 +1,61 @@
-import { Link, useParams } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
 
-function TaskDetails({ tasks }) {
-
+function TaskDetails() {
     const { id } = useParams();
 
-    const task = tasks.find(
-        (task) => String(task.id) === String(id)
-    );
+    const [task, setTask] = useState(null);
+    const [loading, setLoading] = useState(true);
 
+    useEffect(() => {
 
-    // If task does not exist
-    if (!task) {
+        fetch(`http://localhost:5000/api/tasks/${id}`)
+            .then((response) => {
 
+                if (!response.ok) {
+                    throw new Error("Task Not Found");
+                }
+
+                return response.json();
+            })
+            .then((data) => {
+                setTask(data);
+            })
+            .catch((error) => {
+                console.log(error);
+                setTask(null);
+            })
+            .finally(() => {
+                setLoading(false);
+            });
+
+    }, [id]);
+
+    if (loading) {
         return (
-            <div className="task-details-page">
-
-                <div className="details-card">
-
-                    <h1>
-                        Task Not Found
-                    </h1>
-
-                    <p>
-                        The task you are looking for does not exist.
-                    </p>
-
-                    <Link
-                        to="/tasks"
-                        className="back-btn"
-                    >
-                        ← Back to Tasks
-                    </Link>
-
-                </div>
-
+            <div>
+                <h2>Loading....</h2>
             </div>
         );
     }
 
+    if (!task) {
+        return (
+            <div>
+                <h2>Task Not Found!</h2>
+            </div>
+        );
+    }
 
     return (
-        <div className="task-details-page">
+        <div>
+            <h1>Task Details</h1>
 
-            {/* Back button */}
-            <Link
-                to="/tasks"
-                className="back-btn"
-            >
-                ← Back to Tasks
-            </Link>
+            <h2>{task.title}</h2>
 
+            <p>{task.description}</p>
 
-            {/* Details Card */}
-            <div className="details-card">
-
-                <span className="details-id">
-                    TASK #{task.id}
-                </span>
-
-                <h1>
-                    {task.title}
-                </h1>
-
-
-                {/* Status */}
-                <div className="details-status">
-
-                    <span
-                        className={`status-badge ${
-                            task.status
-                                .toLowerCase()
-                                .replace(" ", "-")
-                        }`}
-                    >
-                        {task.status}
-                    </span>
-
-                </div>
-
-
-                {/* Description */}
-                <div className="details-section">
-
-                    <h3>
-                        Description
-                    </h3>
-
-                    <p>
-                        {task.description}
-                    </p>
-
-                </div>
-
-
-                {/* Information */}
-                <div className="details-info">
-
-                    <div>
-
-                        <span>
-                            Task ID
-                        </span>
-
-                        <strong>
-                            #{task.id}
-                        </strong>
-
-                    </div>
-
-
-                    <div>
-
-                        <span>
-                            Status
-                        </span>
-
-                        <strong>
-                            {task.status}
-                        </strong>
-
-                    </div>
-
-                </div>
-
-            </div>
-
+            <p>Status: {task.status}</p>
         </div>
     );
 }

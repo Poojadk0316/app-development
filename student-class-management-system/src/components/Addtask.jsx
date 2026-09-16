@@ -1,178 +1,88 @@
 import { useState } from "react";
 
-function AddTask({
-    onAddTask,
-    onClose
-}) {
-
+function AddTask(props) {
     const [title, setTitle] = useState("");
-
     const [description, setDescription] = useState("");
 
-    const [status, setStatus] = useState("Pending");
-
-
-    // SUBMIT FORM
-    const handleSubmit = (e) => {
-
+    const handleSubmit = async (e) => {
         e.preventDefault();
 
-
-        if (title.trim() === "") {
-
-            alert("Please enter a task title");
-
+        // Prevent empty task
+        if (title.trim() === "" || description.trim() === "") {
+            alert("Please enter both title and description.");
             return;
-
         }
 
-
+        // Do NOT send id from frontend
         const newTask = {
-
-            id: Date.now(),
-
-            title: title.trim(),
-
-            description:
-                description.trim() ||
-                "No description added.",
-
-            status: status
-
+            title: title,
+            description: description,
+            status: "Pending"
         };
 
+        try {
+            const response = await fetch("http://localhost:5000/api/tasks", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(newTask)
+            });
 
-        onAddTask(newTask);
+            if (!response.ok) {
+                throw new Error("Failed to add task");
+            }
 
+            const data = await response.json();
 
-        // Clear form
+            // Send newly created task to Dashboard
+            props.onAddTask(data);
 
-        setTitle("");
+            // Clear form
+            setTitle("");
+            setDescription("");
 
-        setDescription("");
-
-        setStatus("Pending");
-
+        } catch (error) {
+            console.log("Error adding task:", error);
+            alert("Unable to add task. Make sure the backend is running.");
+        }
     };
 
-
     return (
-        <div className="add-task-form">
-
-            <div className="add-task-title">
-
-                <div>
-
-                    <p className="page-label">
-                        NEW TASK
-                    </p>
-
-                    <h2>
-                        Add New Task
-                    </h2>
-
-                </div>
-
-            </div>
-
+        <div>
+            <h2>Add Task</h2>
 
             <form onSubmit={handleSubmit}>
 
-                {/* TITLE */}
+                <label>Add Title: </label>
 
-                <div className="form-group">
+                <input
+                    type="text"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="Enter task title"
+                />
 
-                    <label>
-                        Task Title
-                    </label>
+                <br />
+                <br />
 
-                    <input
-                        type="text"
-                        placeholder="Enter task title..."
-                        value={title}
-                        onChange={(e) =>
-                            setTitle(e.target.value)
-                        }
-                    />
+                <label>Add Description: </label>
 
-                </div>
+                <input
+                    type="text"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="Enter task description"
+                />
 
+                <br />
+                <br />
 
-                {/* DESCRIPTION */}
-
-                <div className="form-group">
-
-                    <label>
-                        Description
-                    </label>
-
-                    <textarea
-                        placeholder="Enter task description..."
-                        value={description}
-                        onChange={(e) =>
-                            setDescription(e.target.value)
-                        }
-                    ></textarea>
-
-                </div>
-
-
-                {/* STATUS */}
-
-                <div className="form-group">
-
-                    <label>
-                        Status
-                    </label>
-
-                    <select
-                        value={status}
-                        onChange={(e) =>
-                            setStatus(e.target.value)
-                        }
-                    >
-
-                        <option value="Pending">
-                            Pending
-                        </option>
-
-                        <option value="In Progress">
-                            In Progress
-                        </option>
-
-                        <option value="Completed">
-                            Completed
-                        </option>
-
-                    </select>
-
-                </div>
-
-
-                {/* BUTTONS */}
-
-                <div className="form-buttons">
-
-                    <button
-                        type="submit"
-                        className="save-task-btn"
-                    >
-                        ✓ Add Task
-                    </button>
-
-
-                    <button
-                        type="button"
-                        className="cancel-task-btn"
-                        onClick={onClose}
-                    >
-                        Cancel
-                    </button>
-
-                </div>
+                <button type="submit">
+                    Add Task!
+                </button>
 
             </form>
-
         </div>
     );
 }
