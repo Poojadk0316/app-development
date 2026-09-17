@@ -4,10 +4,15 @@ import AddTask from "./addtask";
 
 function Dashboard(props) {
 
-    // Change task status
+    // ===============================
+    // CHANGE TASK STATUS
+    // ===============================
+
     const toggleTask = async (id) => {
 
-        const task = props.tasks.find((task) => task.id === id);
+        const task = props.tasks.find(
+            (task) => task._id === id
+        );
 
         if (!task) {
             return;
@@ -24,9 +29,11 @@ function Dashboard(props) {
                 `http://localhost:5000/api/tasks/${id}`,
                 {
                     method: "PUT",
+
                     headers: {
                         "Content-Type": "application/json"
                     },
+
                     body: JSON.stringify({
                         status: newStatus
                     })
@@ -41,34 +48,51 @@ function Dashboard(props) {
 
             props.setTasks(
                 props.tasks.map((task) => {
-                    if (task.id === id) {
+
+                    if (task._id === id) {
                         return updatedTask;
                     }
 
                     return task;
+
                 })
             );
 
         } catch (error) {
-            console.log("Error updating task:", error);
+
+            console.log(
+                "Error updating task:",
+                error
+            );
+
         }
+
     };
 
 
-    // Add new task
+    // ===============================
+    // ADD NEW TASK
+    // ===============================
+
     const addTask = (newTask) => {
 
         props.setTasks([
             ...props.tasks,
             newTask
         ]);
+
     };
 
 
-    // Delete task
+    // ===============================
+    // DELETE TASK
+    // ===============================
+
     const deleteTask = async (id) => {
 
         try {
+
+            console.log("Deleting Task ID:", id);
 
             const response = await fetch(
                 `http://localhost:5000/api/tasks/${id}`,
@@ -77,25 +101,41 @@ function Dashboard(props) {
                 }
             );
 
+            const data = await response.json();
+
+            console.log("Delete Response:", data);
+
             if (!response.ok) {
-                throw new Error("Failed to delete task");
+
+                throw new Error(
+                    data.message || "Failed to delete task"
+                );
+
             }
 
-            const deletedTask = await response.json();
-
+            // Remove deleted task from frontend
             props.setTasks(
                 props.tasks.filter(
-                    (task) => task.id !== deletedTask.id
+                    (task) => task._id !== id
                 )
             );
 
         } catch (error) {
-            console.log("Error deleting task:", error);
+
+            console.log(
+                "Error deleting task:",
+                error
+            );
+
         }
+
     };
 
 
-    // Calculate statistics
+    // ===============================
+    // CALCULATE STATISTICS
+    // ===============================
+
     const totalTasks = props.tasks.length;
 
     const completedTasks = props.tasks.filter(
@@ -107,7 +147,12 @@ function Dashboard(props) {
     ).length;
 
 
+    // ===============================
+    // DISPLAY
+    // ===============================
+
     return (
+
         <main>
 
             {/* ================= STATS ================= */}
@@ -148,13 +193,25 @@ function Dashboard(props) {
                 {props.tasks.map((task) => (
 
                     <TaskCard
-                        key={task.id}
-                        id={task.id}
+
+                        key={task._id}
+
+                        id={task._id}
+
                         title={task.title}
+
                         description={task.description}
+
                         status={task.status}
-                        onToggle={() => toggleTask(task.id)}
-                        onDelete={() => deleteTask(task.id)}
+
+                        onToggle={() =>
+                            toggleTask(task._id)
+                        }
+
+                        onDelete={() =>
+                            deleteTask(task._id)
+                        }
+
                     />
 
                 ))}
@@ -162,7 +219,9 @@ function Dashboard(props) {
             </div>
 
         </main>
+
     );
+
 }
 
 export default Dashboard;

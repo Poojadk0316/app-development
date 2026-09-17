@@ -1,9 +1,28 @@
 // ===============================
+// LOAD ENVIRONMENT VARIABLES
+// ===============================
+
+require("dotenv").config();
+
+
+// ===============================
+// DNS CONFIGURATION
+// ===============================
+
+const dns = require("dns");
+
+dns.setServers(["8.8.8.8"]);
+
+
+// ===============================
 // IMPORTS
 // ===============================
 
+const Task = require("./models/Task.js");
+
 const express = require("express");
 const cors = require("cors");
+const mongoose = require("mongoose");
 
 
 // ===============================
@@ -22,49 +41,45 @@ app.use(express.json());
 
 
 // ===============================
-// TASK ARRAY
+// MONGODB CONNECTION
 // ===============================
 
-const tasks = [
+mongoose.connect(process.env.MONGODB_URL)
+    .then(() => {
 
-    {
-        id: 1,
-        title: "Learn React",
-        description: "Understanding Components",
-        status: "Completed"
-    },
+        console.log("MongoDB Connected Successfully!");
 
-    {
-        id: 2,
-        title: "Learn JavaScript",
-        description: "Understanding Variables, Functions",
-        status: "Pending"
-    },
+    })
+    .catch((error) => {
 
-    {
-        id: 3,
-        title: "Learn MongoDB",
-        description: "Understanding Databases",
-        status: "Pending"
-    },
+        console.log("MongoDB Connection Failed:", error.message);
 
-    {
-        id: 4,
-        title: "NSS",
-        description: "Complete NSS Activities",
-        status: "Pending"
-    }
-
-];
+    });
 
 
 // ===============================
 // GET ALL TASKS
 // ===============================
 
-app.get("/api/tasks", (req, res) => {
+app.get("/api/tasks", async (req, res) => {
 
-    res.json(tasks);
+    try {
+
+        const tasks = await Task.find();
+
+        res.status(200).json(tasks);
+
+    } catch (error) {
+
+        console.log("Error fetching tasks:", error.message);
+
+        res.status(500).json({
+
+            message: "Failed to fetch tasks"
+
+        });
+
+    }
 
 });
 
@@ -73,23 +88,35 @@ app.get("/api/tasks", (req, res) => {
 // GET ONE TASK
 // ===============================
 
-app.get("/api/tasks/:id", (req, res) => {
+app.get("/api/tasks/:id", async (req, res) => {
 
-    const id = Number(req.params.id);
+    try {
 
-    const task = tasks.find(
-        (task) => task.id === id
-    );
+        const taskData = await Task.findById(req.params.id);
 
-    if (!task) {
+        if (!taskData) {
 
-        return res.status(404).json({
-            message: "Task not found!"
+            return res.status(404).json({
+
+                message: "Task not found!"
+
+            });
+
+        }
+
+        res.status(200).json(taskData);
+
+    } catch (error) {
+
+        console.log("Error fetching task:", error.message);
+
+        res.status(500).json({
+
+            message: "Invalid Task ID"
+
         });
 
     }
-
-    res.json(task);
 
 });
 
@@ -98,37 +125,60 @@ app.get("/api/tasks/:id", (req, res) => {
 // ADD NEW TASK
 // ===============================
 
-app.post("/api/tasks", (req, res) => {
+app.post("/api/tasks", async (req, res) => {
 
-    const { title, description, status } = req.body;
+    try {
 
-    if (!title || !description) {
+        const { title, description, status } = req.body;
 
-        return res.status(400).json({
-            message: "Title and description are required"
+
+        // Check required fields
+
+        if (!title || !description) {
+
+            return res.status(400).json({
+
+                message: "Title and description are required"
+
+            });
+
+        }
+
+
+        // Create task
+
+        const newTask = new Task({
+
+            title: title,
+
+            description: description,
+
+            status: status || "Pending"
+
+        });
+
+
+        // Save task to MongoDB
+
+        const savedTask = await newTask.save();
+
+
+        console.log("New Task Added:", savedTask);
+
+
+        res.status(201).json(savedTask);
+
+    } catch (error) {
+
+        console.log("Error adding task:", error.message);
+
+        res.status(500).json({
+
+            message: "Failed to add task"
+
         });
 
     }
-
-    const newTask = {
-
-        id: tasks.length > 0
-            ? Math.max(...tasks.map((task) => task.id)) + 1
-            : 1,
-
-        title: title,
-
-        description: description,
-
-        status: status || "Pending"
-
-    };
-
-    tasks.push(newTask);
-
-    console.log("New Task Added:", newTask);
-
-    res.status(201).json(newTask);
 
 });
 
@@ -137,27 +187,54 @@ app.post("/api/tasks", (req, res) => {
 // CHANGE TASK STATUS
 // ===============================
 
-app.put("/api/tasks/:id", (req, res) => {
+app.put("/api/tasks/:id", async (req, res) => {
 
-    const id = Number(req.params.id);
+    try {
 
-    const task = tasks.find(
-        (task) => task.id === id
-    );
+        const updatedTask = await Task.findByIdAndUpdate(
 
-    if (!task) {
+            req.params.id,
 
-        return res.status(404).json({
-            message: "Task Not Found"
+            {
+                status: req.body.status
+            },
+
+            {
+                new: true
+            }
+
+        );
+
+
+        // Check if task exists
+
+        if (!updatedTask) {
+
+            return res.status(404).json({
+
+                message: "Task Not Found"
+
+            });
+
+        }
+
+
+        console.log("Task Updated:", updatedTask);
+
+
+        res.status(200).json(updatedTask);
+
+    } catch (error) {
+
+        console.log("Error updating task:", error.message);
+
+        res.status(500).json({
+
+            message: "Failed to update task"
+
         });
 
     }
-
-    task.status = req.body.status;
-
-    console.log("Task Updated:", task);
-
-    res.json(task);
 
 });
 
@@ -166,27 +243,45 @@ app.put("/api/tasks/:id", (req, res) => {
 // DELETE TASK
 // ===============================
 
-app.delete("/api/tasks/:id", (req, res) => {
+app.delete("/api/tasks/:id", async (req, res) => {
 
-    const id = Number(req.params.id);
+    try {
 
-    const taskIndex = tasks.findIndex(
-        (task) => task.id === id
-    );
+        const deletedTask = await Task.findByIdAndDelete(
 
-    if (taskIndex === -1) {
+            req.params.id
 
-        return res.status(404).json({
-            message: "Task Not Found"
+        );
+
+
+        // Check if task exists
+
+        if (!deletedTask) {
+
+            return res.status(404).json({
+
+                message: "Task Not Found"
+
+            });
+
+        }
+
+        console.log("Task Deleted:", deletedTask);
+
+
+        res.status(200).json(deletedTask);
+
+    } catch (error) {
+
+        console.log("Error deleting task:", error.message);
+
+        res.status(500).json({
+
+            message: "Failed to delete task"
+
         });
 
     }
-
-    const deletedTask = tasks.splice(taskIndex, 1)[0];
-
-    console.log("Task Deleted:", deletedTask);
-
-    res.json(deletedTask);
 
 });
 
@@ -211,3 +306,4 @@ app.listen(5000, () => {
     console.log("Server is Running on port 5000");
 
 });
+
