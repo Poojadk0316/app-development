@@ -10,107 +10,238 @@ function Register() {
     const [password, setPassword] = useState("");
     const [role, setRole] = useState("");
 
-    const handleRegister = (e) => {
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState("");
+
+
+    /* =====================================================
+       HANDLE REGISTER
+       ===================================================== */
+
+    const handleRegister = async (e) => {
 
         e.preventDefault();
 
+        setError("");
+
+
+        /* =================================================
+           CHECK ROLE
+           ================================================= */
+
         if (!role) {
-            alert("Please select a role.");
+
+            setError("Please select a role.");
+
             return;
         }
 
-        // Get existing users
-        const existingUsers =
-            JSON.parse(localStorage.getItem("foodRescueUsers")) || [];
 
-        // Check if email already exists
-        const userExists = existingUsers.some(
-            (user) => user.email === email
-        );
+        try {
 
-        if (userExists) {
-            alert("An account with this email already exists.");
-            return;
+            setLoading(true);
+
+
+            /* =================================================
+               SEND USER TO BACKEND
+               ================================================= */
+
+            const response = await fetch(
+                "http://localhost:5000/api/auth/register",
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+
+                    body: JSON.stringify({
+                        name,
+                        email,
+                        password,
+                        role
+                    })
+                }
+            );
+
+
+            const data = await response.json();
+
+
+            /* =================================================
+               CHECK BACKEND RESPONSE
+               ================================================= */
+
+            if (!response.ok) {
+
+                throw new Error(
+                    data.message ||
+                    "Registration failed"
+                );
+            }
+
+
+            /* =================================================
+               REMOVE OLD LOCAL USER DATA
+               ================================================= */
+
+            localStorage.removeItem(
+                "foodRescueUsers"
+            );
+
+            localStorage.removeItem(
+                "foodRescueCurrentUser"
+            );
+
+
+            /* =================================================
+               SHOW SUCCESS MESSAGE
+               ================================================= */
+
+            alert(
+                "Account created successfully! 🎉"
+            );
+
+
+            /* =================================================
+               GO TO LOGIN
+               ================================================= */
+
+            navigate("/login");
+
+
+        } catch (error) {
+
+            console.error(
+                "Registration error:",
+                error
+            );
+
+            setError(
+                error.message ||
+                "Unable to create account. Please try again."
+            );
+
+        } finally {
+
+            setLoading(false);
         }
-
-        // Create new user
-        const newUser = {
-            id: Date.now(),
-            name,
-            email,
-            password,
-            role
-        };
-
-        // Save user
-        existingUsers.push(newUser);
-
-        localStorage.setItem(
-            "foodRescueUsers",
-            JSON.stringify(existingUsers)
-        );
-
-        alert("Account created successfully! 🎉");
-
-        // Go to login page
-        navigate("/login");
     };
 
+
     return (
+
         <main className="auth-page">
 
             <div className="auth-container register-container">
+
 
                 <div className="auth-logo">
                     🍱 FoodRescue <span>AI</span>
                 </div>
 
-                <h1>Join FoodRescue AI</h1>
+
+                <h1>
+                    Join FoodRescue AI
+                </h1>
+
 
                 <p className="auth-subtitle">
                     Choose your role and start making an impact.
                 </p>
 
 
-                <form onSubmit={handleRegister}>
+                {/* =================================================
+                    ERROR MESSAGE
+                   ================================================= */}
 
-                    <label>Full Name</label>
+                {error && (
+
+                    <div className="dashboard-error">
+                        {error}
+                    </div>
+
+                )}
+
+
+                <form
+                    onSubmit={handleRegister}
+                >
+
+
+                    {/* =================================================
+                        FULL NAME
+                       ================================================= */}
+
+                    <label>
+                        Full Name
+                    </label>
+
 
                     <input
                         type="text"
                         placeholder="Enter your name"
                         value={name}
-                        onChange={(e) => setName(e.target.value)}
+                        onChange={(e) =>
+                            setName(e.target.value)
+                        }
                         required
                     />
 
 
-                    <label>Email Address</label>
+                    {/* =================================================
+                        EMAIL
+                       ================================================= */}
+
+                    <label>
+                        Email Address
+                    </label>
+
 
                     <input
                         type="email"
                         placeholder="Enter your email"
                         value={email}
-                        onChange={(e) => setEmail(e.target.value)}
+                        onChange={(e) =>
+                            setEmail(e.target.value)
+                        }
                         required
                     />
 
 
-                    <label>Password</label>
+                    {/* =================================================
+                        PASSWORD
+                       ================================================= */}
+
+                    <label>
+                        Password
+                    </label>
+
 
                     <input
                         type="password"
                         placeholder="Create a password"
                         value={password}
-                        onChange={(e) => setPassword(e.target.value)}
+                        onChange={(e) =>
+                            setPassword(e.target.value)
+                        }
                         required
                     />
 
 
-                    <label>I want to join as</label>
+                    {/* =================================================
+                        ROLE
+                       ================================================= */}
+
+                    <label>
+                        I want to join as
+                    </label>
 
 
                     <div className="role-options">
+
+
+                        {/* DONOR */}
 
                         <button
                             type="button"
@@ -119,12 +250,18 @@ function Register() {
                                     ? "role-card selected"
                                     : "role-card"
                             }
-                            onClick={() => setRole("DONOR")}
+                            onClick={() =>
+                                setRole("DONOR")
+                            }
                         >
 
-                            <span>🍱</span>
+                            <span>
+                                🍱
+                            </span>
 
-                            <strong>Donor</strong>
+                            <strong>
+                                Donor
+                            </strong>
 
                             <small>
                                 Donate surplus food
@@ -133,6 +270,8 @@ function Register() {
                         </button>
 
 
+                        {/* RECEIVER */}
+
                         <button
                             type="button"
                             className={
@@ -140,12 +279,18 @@ function Register() {
                                     ? "role-card selected"
                                     : "role-card"
                             }
-                            onClick={() => setRole("RECEIVER")}
+                            onClick={() =>
+                                setRole("RECEIVER")
+                            }
                         >
 
-                            <span>🤝</span>
+                            <span>
+                                🤝
+                            </span>
 
-                            <strong>Receiver</strong>
+                            <strong>
+                                Receiver
+                            </strong>
 
                             <small>
                                 Receive food donations
@@ -156,15 +301,29 @@ function Register() {
                     </div>
 
 
+                    {/* =================================================
+                        REGISTER BUTTON
+                       ================================================= */}
+
                     <button
                         type="submit"
                         className="auth-btn"
+                        disabled={loading}
                     >
-                        Create Account →
+
+                        {loading
+                            ? "Creating Account..."
+                            : "Create Account →"
+                        }
+
                     </button>
 
                 </form>
 
+
+                {/* =================================================
+                    LOGIN LINK
+                   ================================================= */}
 
                 <p className="auth-bottom">
 
@@ -175,6 +334,7 @@ function Register() {
                     </Link>
 
                 </p>
+
 
             </div>
 

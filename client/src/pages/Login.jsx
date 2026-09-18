@@ -2,50 +2,130 @@ import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 
 function Login() {
-
     const navigate = useNavigate();
 
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
-
     const [error, setError] = useState("");
+    const [loading, setLoading] = useState(false);
 
-    const handleLogin = (e) => {
-
+    const handleLogin = async (e) => {
         e.preventDefault();
 
         setError("");
+        setLoading(true);
 
-        // Get registered users
-        const users =
-            JSON.parse(localStorage.getItem("foodRescueUsers")) || [];
+        try {
 
-        // Find matching user
-        const user = users.find(
-            (item) =>
-                item.email === email &&
-                item.password === password
-        );
+            const response = await fetch(
+                "http://localhost:5000/api/auth/login",
+                {
+                    method: "POST",
 
-        // Incorrect login
-        if (!user) {
-            setError("Invalid email or password.");
-            return;
-        }
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
 
-        // Save logged-in user
-        localStorage.setItem(
-            "foodRescueCurrentUser",
-            JSON.stringify(user)
-        );
+                    body: JSON.stringify({
+                        email,
+                        password
+                    })
+                }
+            );
 
-        // Redirect based on role
-        if (user.role === "DONOR") {
-            navigate("/donor-dashboard");
-        } else if (user.role === "RECEIVER") {
-            navigate("/receiver-dashboard");
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(
+                    data.message ||
+                    "Invalid email or password."
+                );
+            }
+
+
+            // =========================================
+            // SAVE USER DETAILS
+            // =========================================
+
+            const loggedInUser = {
+                id: data.user.id,
+                name: data.user.name,
+                email: data.user.email,
+                role: data.user.role
+            };
+
+
+            // =========================================
+            // SAVE USER
+            // =========================================
+
+            localStorage.setItem(
+                "foodRescueCurrentUser",
+                JSON.stringify(loggedInUser)
+            );
+
+
+            // =========================================
+            // SAVE JWT TOKEN
+            // =========================================
+
+            if (data.token) {
+
+                localStorage.setItem(
+                    "foodRescueToken",
+                    data.token
+                );
+
+            }
+
+
+            // =========================================
+            // REDIRECT
+            // =========================================
+
+            if (
+                loggedInUser.role ===
+                "DONOR"
+            ) {
+
+                navigate(
+                    "/donor-dashboard"
+                );
+
+            } else if (
+                loggedInUser.role ===
+                "RECEIVER"
+            ) {
+
+                navigate(
+                    "/receiver-dashboard"
+                );
+
+            } else {
+
+                navigate("/");
+
+            }
+
+        } catch (error) {
+
+            console.error(
+                "Login error:",
+                error
+            );
+
+            setError(
+                error.message ||
+                "Unable to login. Please try again."
+            );
+
+        } finally {
+
+            setLoading(false);
+
         }
     };
+
 
     return (
         <main className="auth-page">
@@ -56,9 +136,11 @@ function Login() {
                     🍱 FoodRescue <span>AI</span>
                 </div>
 
+
                 <h1>
                     Welcome Back
                 </h1>
+
 
                 <p className="auth-subtitle">
                     Login to continue making an impact.
@@ -66,11 +148,9 @@ function Login() {
 
 
                 {error && (
-
                     <div className="login-error">
                         {error}
                     </div>
-
                 )}
 
 
@@ -109,8 +189,11 @@ function Login() {
                     <button
                         type="submit"
                         className="auth-btn"
+                        disabled={loading}
                     >
-                        Login →
+                        {loading
+                            ? "Logging in..."
+                            : "Login →"}
                     </button>
 
                 </form>

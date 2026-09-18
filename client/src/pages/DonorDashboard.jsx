@@ -1,11 +1,10 @@
-
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 function DonorDashboard() {
 
     /* =====================================================
        CURRENT USER
-       ===================================================== */
+    ===================================================== */
 
     const currentUser =
         JSON.parse(
@@ -15,98 +14,29 @@ function DonorDashboard() {
             role: "DONOR"
         };
 
-
-    /* =====================================================
-       DEFAULT DONATIONS
-       ===================================================== */
-
-    const defaultDonations = [
-        {
-            id: 1,
-            foodName: "Vegetable Rice & Curry",
-            foodType: "Cooked Food",
-            quantity: "12",
-            quantityUnit: "kg",
-            preparationTime: "Today, 4:00 PM",
-            expiryTime: "Today, 10:00 PM",
-            pickupStart: "Today, 7:00 PM",
-            pickupEnd: "Today, 8:00 PM",
-            location: "BTM Layout, Bengaluru",
-            description:
-                "Freshly prepared vegetarian rice and curry.",
-            donorName: "Green Leaf Restaurant",
-            status: "Available"
-        },
-
-        {
-            id: 2,
-            foodName: "Fresh Chapati & Dal",
-            foodType: "Cooked Food",
-            quantity: "8",
-            quantityUnit: "kg",
-            preparationTime: "Today, 5:00 PM",
-            expiryTime: "Today, 11:00 PM",
-            pickupStart: "Today, 8:30 PM",
-            pickupEnd: "Today, 9:00 PM",
-            location: "Jayanagar, Bengaluru",
-            description:
-                "Fresh chapati and dal from evening catering.",
-            donorName: "Annapurna Caterers",
-            status: "Accepted",
-
-            /* Receiver information */
-
-            acceptedBy: "FoodRescue Receiver",
-            acceptedAt: "Today, 6:30 PM",
-            pickupStatus: "Pending Pickup"
-        },
-
-        {
-            id: 3,
-            foodName: "Paneer Rice",
-            foodType: "Cooked Food",
-            quantity: "15",
-            quantityUnit: "kg",
-            preparationTime: "Yesterday, 6:00 PM",
-            expiryTime: "Yesterday, 11:00 PM",
-            pickupStart: "Yesterday, 7:00 PM",
-            pickupEnd: "Yesterday, 8:00 PM",
-            location: "Koramangala, Bengaluru",
-            description:
-                "Paneer rice from a completed event.",
-            donorName: "Spice Garden",
-            status: "Completed"
-        }
-    ];
+    const currentUserId =
+        currentUser.id ||
+        currentUser._id ||
+        null;
 
 
     /* =====================================================
-       LOAD DONATIONS
-       ===================================================== */
+       DONATIONS
+    ===================================================== */
 
-    const [donations, setDonations] = useState(() => {
+    const [donations, setDonations] =
+        useState([]);
 
-        const savedDonations =
-            localStorage.getItem(
-                "foodRescueDonations"
-            );
+    const [loading, setLoading] =
+        useState(true);
 
-        if (savedDonations) {
-            return JSON.parse(savedDonations);
-        }
-
-        localStorage.setItem(
-            "foodRescueDonations",
-            JSON.stringify(defaultDonations)
-        );
-
-        return defaultDonations;
-    });
+    const [error, setError] =
+        useState("");
 
 
     /* =====================================================
        FORM VISIBILITY
-       ===================================================== */
+    ===================================================== */
 
     const [showForm, setShowForm] =
         useState(false);
@@ -114,7 +44,7 @@ function DonorDashboard() {
 
     /* =====================================================
        SELECTED DONATION
-       ===================================================== */
+    ===================================================== */
 
     const [selectedDonation, setSelectedDonation] =
         useState(null);
@@ -122,7 +52,7 @@ function DonorDashboard() {
 
     /* =====================================================
        FORM STATES
-       ===================================================== */
+    ===================================================== */
 
     const [foodName, setFoodName] =
         useState("");
@@ -156,91 +86,333 @@ function DonorDashboard() {
 
 
     /* =====================================================
-       ADD DONATION
-       ===================================================== */
+       FORMAT DATE
+    ===================================================== */
 
-    const handleAddDonation = (e) => {
+    const formatDate = (date) => {
 
-        e.preventDefault();
+        if (!date) {
+            return "Not available";
+        }
 
-        const newDonation = {
-
-            id: Date.now(),
-
-            foodName,
-            foodType,
-
-            quantity,
-            quantityUnit,
-
-            preparationTime,
-            expiryTime,
-
-            pickupStart,
-            pickupEnd,
-
-            location,
-            description,
-
-            donorName: currentUser.name,
-
-            status: "Available"
-        };
-
-
-        const updatedDonations = [
-            ...donations,
-            newDonation
-        ];
-
-
-        setDonations(
-            updatedDonations
-        );
-
-
-        localStorage.setItem(
-            "foodRescueDonations",
-            JSON.stringify(
-                updatedDonations
-            )
-        );
-
-
-        /* CLEAR FORM */
-
-        setFoodName("");
-        setFoodType("");
-        setQuantity("");
-        setQuantityUnit("kg");
-
-        setPreparationTime("");
-        setExpiryTime("");
-
-        setPickupStart("");
-        setPickupEnd("");
-
-        setLocation("");
-        setDescription("");
-
-        setShowForm(false);
-
-
-        alert(
-            "Food donation posted successfully! 🍱"
+        return new Date(date).toLocaleString(
+            "en-IN",
+            {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit"
+            }
         );
     };
 
 
     /* =====================================================
+       GET RECEIVER NAME
+    ===================================================== */
+
+    const getReceiverName = (donation) => {
+
+        if (!donation.acceptedBy) {
+            return "Not accepted yet";
+        }
+
+        if (
+            typeof donation.acceptedBy === "object"
+        ) {
+
+            return (
+                donation.acceptedBy.name ||
+                donation.acceptedBy.email ||
+                "Receiver"
+            );
+        }
+
+        return donation.acceptedBy;
+    };
+
+
+    /* =====================================================
+       CHECK CURRENT DONOR
+    ===================================================== */
+
+    const belongsToCurrentDonor = (
+        donation
+    ) => {
+
+        if (donation.donorId) {
+
+            const donationDonorId =
+                typeof donation.donorId === "object"
+                    ? donation.donorId._id ||
+                      donation.donorId.id
+                    : donation.donorId;
+
+            if (
+                currentUserId &&
+                String(donationDonorId) ===
+                String(currentUserId)
+            ) {
+
+                return true;
+            }
+
+            return false;
+        }
+
+        return (
+            donation.donorName ===
+            currentUser.name
+        );
+    };
+
+
+    /* =====================================================
+       LOAD DONATIONS
+    ===================================================== */
+
+    const fetchDonations = async (
+        showLoading = false
+    ) => {
+
+        try {
+
+            if (showLoading) {
+                setLoading(true);
+            }
+
+            setError("");
+
+            const response = await fetch(
+                "http://localhost:5000/api/donations"
+            );
+
+            if (!response.ok) {
+
+                throw new Error(
+                    "Failed to fetch donations"
+                );
+            }
+
+            const data =
+                await response.json();
+
+            const myDonations =
+                data.filter(
+                    (donation) =>
+                        belongsToCurrentDonor(
+                            donation
+                        )
+                );
+
+            setDonations(
+                myDonations
+            );
+
+
+            /* =================================================
+               UPDATE OPEN MODAL WITH LATEST DATA
+            ================================================= */
+
+            setSelectedDonation(
+                (previousDonation) => {
+
+                    if (!previousDonation) {
+                        return null;
+                    }
+
+                    const updatedDonation =
+                        myDonations.find(
+                            (donation) =>
+                                donation._id ===
+                                previousDonation._id
+                        );
+
+                    return (
+                        updatedDonation ||
+                        previousDonation
+                    );
+                }
+            );
+
+        } catch (error) {
+
+            console.error(
+                "Error fetching donations:",
+                error
+            );
+
+            setError(
+                "Unable to load donations. Please make sure the backend is running."
+            );
+
+        } finally {
+
+            if (showLoading) {
+                setLoading(false);
+            }
+        }
+    };
+
+
+    /* =====================================================
+       FETCH ON PAGE LOAD + AUTO REFRESH
+    ===================================================== */
+
+    useEffect(() => {
+
+        fetchDonations(true);
+
+        const refreshInterval =
+            setInterval(() => {
+
+                fetchDonations(false);
+
+            }, 5000);
+
+        return () => {
+
+            clearInterval(
+                refreshInterval
+            );
+
+        };
+
+    }, []);
+
+
+    /* =====================================================
+       ADD DONATION
+    ===================================================== */
+
+    const handleAddDonation = async (e) => {
+
+        e.preventDefault();
+
+        try {
+
+            setError("");
+
+            const newDonation = {
+
+                donorId:
+                    currentUser.id ||
+                    currentUser._id ||
+                    null,
+
+                donorName:
+                    currentUser.name,
+
+                foodName,
+
+                foodType,
+
+                quantity:
+                    Number(quantity),
+
+                quantityUnit,
+
+                preparationTime,
+
+                expiryTime,
+
+                pickupStart,
+
+                pickupEnd,
+
+                location,
+
+                description
+            };
+
+
+            const response = await fetch(
+                "http://localhost:5000/api/donations",
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body: JSON.stringify(
+                        newDonation
+                    )
+                }
+            );
+
+
+            const data =
+                await response.json();
+
+
+            if (!response.ok) {
+
+                throw new Error(
+                    data.message ||
+                    "Failed to create donation"
+                );
+            }
+
+
+            setDonations(
+                (previousDonations) => [
+                    data.donation,
+                    ...previousDonations
+                ]
+            );
+
+
+            /* CLEAR FORM */
+
+            setFoodName("");
+            setFoodType("");
+            setQuantity("");
+            setQuantityUnit("kg");
+            setPreparationTime("");
+            setExpiryTime("");
+            setPickupStart("");
+            setPickupEnd("");
+            setLocation("");
+            setDescription("");
+
+            setShowForm(false);
+
+
+            alert(
+                "Food donation posted successfully! 🍱"
+            );
+
+
+        } catch (error) {
+
+            console.error(
+                "Error adding donation:",
+                error
+            );
+
+            setError(
+                error.message ||
+                "Failed to post donation"
+            );
+        }
+    };
+
+
+    /* =====================================================
        STATISTICS
-       ===================================================== */
+    ===================================================== */
 
     const activeDonations =
         donations.filter(
             (donation) =>
                 donation.status === "Available" ||
-                donation.status === "Accepted"
+                donation.status === "Requested" ||
+                donation.status === "Accepted" ||
+                donation.status === "Pickup Assigned" ||
+                donation.status === "Picked Up"
         ).length;
 
 
@@ -252,8 +424,110 @@ function DonorDashboard() {
 
 
     /* =====================================================
+       COMPLETED DONATIONS
+    ===================================================== */
+
+    const completedFood =
+        donations.filter(
+            (donation) =>
+                donation.status === "Completed"
+        );
+
+
+    /* =====================================================
+       CALCULATE FOOD RESCUED
+    ===================================================== */
+
+    const foodRescued =
+        completedFood.reduce(
+            (total, donation) => {
+
+                const quantity =
+                    Number(
+                        donation.quantity
+                    ) || 0;
+
+                return total + quantity;
+
+            },
+            0
+        );
+
+
+    /* =====================================================
+       FOOD RESCUED UNIT
+    ===================================================== */
+
+    const rescuedUnits =
+        [
+            ...new Set(
+                completedFood
+                    .map(
+                        (donation) =>
+                            donation.quantityUnit
+                    )
+                    .filter(Boolean)
+            )
+        ];
+
+
+    const foodRescuedDisplay =
+        completedFood.length === 0
+            ? "0"
+            : rescuedUnits.length === 1
+                ? `${foodRescued} ${rescuedUnits[0]}`
+                : `${foodRescued}`;
+
+
+    /* =====================================================
+       ACCEPTED / ACTIVE RESCUES
+    ===================================================== */
+
+    const acceptedDonations =
+        donations.filter(
+            (donation) =>
+                donation.status === "Accepted" ||
+                donation.status === "Pickup Assigned" ||
+                donation.status === "Picked Up"
+        );
+
+
+    /* =====================================================
+       RESCUE HISTORY
+    ===================================================== */
+
+    const rescueHistory =
+        donations.filter(
+            (donation) =>
+                donation.acceptedBy &&
+                (
+                    donation.status === "Accepted" ||
+                    donation.status === "Pickup Assigned" ||
+                    donation.status === "Picked Up" ||
+                    donation.status === "Completed"
+                )
+        );
+
+
+    /* =====================================================
+       STATUS CLASS
+    ===================================================== */
+
+    const getStatusClass = (status) => {
+
+        if (!status) {
+            return "";
+        }
+
+        return status
+            .toLowerCase()
+            .replace(/\s+/g, "-");
+    };
+
+
+    /* =====================================================
        JSX
-       ===================================================== */
+    ===================================================== */
 
     return (
 
@@ -262,7 +536,7 @@ function DonorDashboard() {
 
             {/* =================================================
                 HEADER
-               ================================================= */}
+            ================================================= */}
 
             <section className="dashboard-header">
 
@@ -297,13 +571,24 @@ function DonorDashboard() {
 
 
             {/* =================================================
+                ERROR
+            ================================================= */}
+
+            {error && (
+
+                <div className="dashboard-error">
+                    {error}
+                </div>
+
+            )}
+
+
+            {/* =================================================
                 STATISTICS
-               ================================================= */}
+            ================================================= */}
 
             <section className="dashboard-stats">
 
-
-                {/* TOTAL DONATIONS */}
 
                 <div className="dashboard-stat-card">
 
@@ -326,8 +611,6 @@ function DonorDashboard() {
                 </div>
 
 
-                {/* MEALS RESCUED */}
-
                 <div className="dashboard-stat-card">
 
                     <div className="stat-icon orange">
@@ -337,19 +620,17 @@ function DonorDashboard() {
                     <div>
 
                         <span>
-                            Meals Rescued
+                            Food Rescued
                         </span>
 
                         <strong>
-                            35+
+                            {foodRescuedDisplay}
                         </strong>
 
                     </div>
 
                 </div>
 
-
-                {/* ACTIVE DONATIONS */}
 
                 <div className="dashboard-stat-card">
 
@@ -371,8 +652,6 @@ function DonorDashboard() {
 
                 </div>
 
-
-                {/* COMPLETED */}
 
                 <div className="dashboard-stat-card">
 
@@ -398,13 +677,167 @@ function DonorDashboard() {
 
 
             {/* =================================================
+                ACTIVE RESCUES
+            ================================================= */}
+
+            {acceptedDonations.length > 0 && (
+
+                <section className="donations-section">
+
+                    <div className="section-top">
+
+                        <div>
+
+                            <p className="dashboard-label">
+                                RESCUE UPDATE
+                            </p>
+
+                            <h2>
+                                Active Rescues
+                            </h2>
+
+                        </div>
+
+
+                        <span className="donation-count">
+
+                            {acceptedDonations.length}
+                            {" "}
+                            active
+
+                        </span>
+
+                    </div>
+
+
+                    <div className="donation-list">
+
+                        {acceptedDonations.map(
+                            (donation) => (
+
+                                <div
+                                    className="donation-row"
+                                    key={
+                                        donation._id
+                                    }
+                                >
+
+                                    <div className="donation-food-icon">
+                                        🤝
+                                    </div>
+
+
+                                    <div className="donation-info">
+
+                                        <h3>
+                                            {
+                                                donation.foodName
+                                            }
+                                        </h3>
+
+                                        <p>
+
+                                            Accepted by{" "}
+
+                                            <strong>
+                                                {
+                                                    getReceiverName(
+                                                        donation
+                                                    )
+                                                }
+                                            </strong>
+
+                                        </p>
+
+                                    </div>
+
+
+                                    <div className="donation-detail">
+
+                                        <span>
+                                            Quantity
+                                        </span>
+
+                                        <strong>
+
+                                            {
+                                                donation.quantity
+                                            }{" "}
+
+                                            {
+                                                donation.quantityUnit
+                                            }
+
+                                        </strong>
+
+                                    </div>
+
+
+                                    <div className="donation-detail">
+
+                                        <span>
+                                            Pickup Status
+                                        </span>
+
+                                        <strong>
+
+                                            {
+                                                donation.pickupStatus ||
+                                                "Pending Pickup"
+                                            }
+
+                                        </strong>
+
+                                    </div>
+
+
+                                    <div className="donation-actions">
+
+                                        <span
+                                            className={`donation-status ${getStatusClass(
+                                                donation.status
+                                            )}`}
+                                        >
+
+                                            {
+                                                donation.status
+                                            }
+
+                                        </span>
+
+
+                                        <button
+                                            className="view-btn"
+                                            onClick={() =>
+                                                setSelectedDonation(
+                                                    donation
+                                                )
+                                            }
+                                        >
+                                            View Details
+                                        </button>
+
+                                    </div>
+
+                                </div>
+
+                            )
+                        )}
+
+                    </div>
+
+                </section>
+
+            )}
+
+
+            {/* =================================================
                 DONATION FORM
-               ================================================= */}
+            ================================================= */}
 
             {showForm && (
 
                 <section className="donation-form-card">
-
 
                     <div className="form-heading">
 
@@ -441,8 +874,6 @@ function DonorDashboard() {
                         <div className="form-grid">
 
 
-                            {/* FOOD NAME */}
-
                             <div className="form-group">
 
                                 <label>
@@ -463,8 +894,6 @@ function DonorDashboard() {
 
                             </div>
 
-
-                            {/* FOOD TYPE */}
 
                             <div className="form-group">
 
@@ -514,8 +943,6 @@ function DonorDashboard() {
 
                             </div>
 
-
-                            {/* QUANTITY */}
 
                             <div className="form-group">
 
@@ -568,14 +995,16 @@ function DonorDashboard() {
                                             Pieces
                                         </option>
 
+                                        <option value="Meals">
+                                            Meals
+                                        </option>
+
                                     </select>
 
                                 </div>
 
                             </div>
 
-
-                            {/* PREPARATION TIME */}
 
                             <div className="form-group">
 
@@ -597,8 +1026,6 @@ function DonorDashboard() {
                             </div>
 
 
-                            {/* EXPIRY TIME */}
-
                             <div className="form-group">
 
                                 <label>
@@ -618,8 +1045,6 @@ function DonorDashboard() {
 
                             </div>
 
-
-                            {/* PICKUP START */}
 
                             <div className="form-group">
 
@@ -641,8 +1066,6 @@ function DonorDashboard() {
                             </div>
 
 
-                            {/* PICKUP END */}
-
                             <div className="form-group">
 
                                 <label>
@@ -662,8 +1085,6 @@ function DonorDashboard() {
 
                             </div>
 
-
-                            {/* LOCATION */}
 
                             <div className="form-group">
 
@@ -686,8 +1107,6 @@ function DonorDashboard() {
                             </div>
 
 
-                            {/* DESCRIPTION */}
-
                             <div className="form-group form-full">
 
                                 <label>
@@ -709,8 +1128,6 @@ function DonorDashboard() {
 
                         </div>
 
-
-                        {/* FORM BUTTONS */}
 
                         <div className="form-actions">
 
@@ -742,22 +1159,21 @@ function DonorDashboard() {
 
 
             {/* =================================================
-                DONATION LIST
-               ================================================= */}
+                DONATION HISTORY
+            ================================================= */}
 
             <section className="donations-section">
-
 
                 <div className="section-top">
 
                     <div>
 
                         <p className="dashboard-label">
-                            YOUR DONATIONS
+                            RESCUE HISTORY
                         </p>
 
                         <h2>
-                            Recent Food Donations
+                            Donation History
                         </h2>
 
                     </div>
@@ -765,9 +1181,9 @@ function DonorDashboard() {
 
                     <span className="donation-count">
 
-                        {donations.length}
+                        {rescueHistory.length}
                         {" "}
-                        donations
+                        rescues
 
                     </span>
 
@@ -776,96 +1192,148 @@ function DonorDashboard() {
 
                 <div className="donation-list">
 
-                    {donations.map(
-                        (donation) => (
 
-                            <div
-                                className="donation-row"
-                                key={donation.id}
-                            >
+                    {loading && (
+
+                        <div className="donation-empty-state">
+                            Loading donations...
+                        </div>
+
+                    )}
 
 
-                                {/* FOOD ICON */}
+                    {!loading &&
+                        donations.length === 0 && (
 
-                                <div className="donation-food-icon">
-                                    🍲
+                            <div className="donation-empty-state">
+
+                                <div>
+                                    🍱
                                 </div>
 
+                                <h3>
+                                    No donations yet
+                                </h3>
 
-                                {/* FOOD INFORMATION */}
-
-                                <div className="donation-info">
-
-                                    <h3>
-                                        {donation.foodName}
-                                    </h3>
-
-                                    <p>
-                                        Donation #{donation.id}
-                                    </p>
-
-                                </div>
-
-
-                                {/* QUANTITY */}
-
-                                <div className="donation-detail">
-
-                                    <span>
-                                        Quantity
-                                    </span>
-
-                                    <strong>
-                                        {donation.quantity}{" "}
-                                        {donation.quantityUnit}
-                                    </strong>
-
-                                </div>
-
-
-                                {/* PICKUP */}
-
-                                <div className="donation-detail">
-
-                                    <span>
-                                        Pickup
-                                    </span>
-
-                                    <strong>
-                                        {donation.pickupStart}
-                                    </strong>
-
-                                </div>
-
-
-                                {/* ACTIONS */}
-
-                                <div className="donation-actions">
-
-                                    <span
-                                        className={`donation-status ${donation.status.toLowerCase()}`}
-                                    >
-                                        {donation.status}
-                                    </span>
-
-
-                                    <button
-                                        className="view-btn"
-                                        onClick={() =>
-                                            setSelectedDonation(
-                                                donation
-                                            )
-                                        }
-                                    >
-                                        View Details
-                                    </button>
-
-                                </div>
+                                <p>
+                                    Post your first surplus food
+                                    donation to get started.
+                                </p>
 
                             </div>
 
-                        )
-                    )}
+                        )}
+
+
+                    {!loading &&
+                        donations.map(
+                            (donation) => (
+
+                                <div
+                                    className="donation-row"
+                                    key={
+                                        donation._id
+                                    }
+                                >
+
+                                    <div className="donation-food-icon">
+                                        🍲
+                                    </div>
+
+
+                                    <div className="donation-info">
+
+                                        <h3>
+                                            {
+                                                donation.foodName
+                                            }
+                                        </h3>
+
+                                        <p>
+
+                                            Donation #
+
+                                            {
+                                                donation._id
+                                            }
+
+                                        </p>
+
+                                    </div>
+
+
+                                    <div className="donation-detail">
+
+                                        <span>
+                                            Quantity
+                                        </span>
+
+                                        <strong>
+
+                                            {
+                                                donation.quantity
+                                            }{" "}
+
+                                            {
+                                                donation.quantityUnit
+                                            }
+
+                                        </strong>
+
+                                    </div>
+
+
+                                    <div className="donation-detail">
+
+                                        <span>
+                                            Pickup
+                                        </span>
+
+                                        <strong>
+
+                                            {
+                                                formatDate(
+                                                    donation.pickupStart
+                                                )
+                                            }
+
+                                        </strong>
+
+                                    </div>
+
+
+                                    <div className="donation-actions">
+
+                                        <span
+                                            className={`donation-status ${getStatusClass(
+                                                donation.status
+                                            )}`}
+                                        >
+
+                                            {
+                                                donation.status
+                                            }
+
+                                        </span>
+
+
+                                        <button
+                                            className="view-btn"
+                                            onClick={() =>
+                                                setSelectedDonation(
+                                                    donation
+                                                )
+                                            }
+                                        >
+                                            View Details
+                                        </button>
+
+                                    </div>
+
+                                </div>
+
+                            )
+                        )}
 
                 </div>
 
@@ -874,7 +1342,7 @@ function DonorDashboard() {
 
             {/* =================================================
                 DONATION DETAILS MODAL
-               ================================================= */}
+            ================================================= */}
 
             {selectedDonation && (
 
@@ -885,7 +1353,6 @@ function DonorDashboard() {
                     }
                 >
 
-
                     <div
                         className="donor-details-modal"
                         onClick={(e) =>
@@ -893,8 +1360,6 @@ function DonorDashboard() {
                         }
                     >
 
-
-                        {/* CLOSE BUTTON */}
 
                         <button
                             className="modal-close"
@@ -905,8 +1370,6 @@ function DonorDashboard() {
                             ✕
                         </button>
 
-
-                        {/* FOOD ICON */}
 
                         <div className="modal-icon">
                             🍲
@@ -919,7 +1382,9 @@ function DonorDashboard() {
 
 
                         <h2>
-                            {selectedDonation.foodName}
+                            {
+                                selectedDonation.foodName
+                            }
                         </h2>
 
 
@@ -928,15 +1393,13 @@ function DonorDashboard() {
                             Donated by{" "}
 
                             <strong>
-                                {selectedDonation.donorName}
+                                {
+                                    selectedDonation.donorName
+                                }
                             </strong>
 
                         </p>
 
-
-                        {/* =================================================
-                            DONATION DETAILS
-                           ================================================= */}
 
                         <div className="modal-details">
 
@@ -948,7 +1411,9 @@ function DonorDashboard() {
                                 </span>
 
                                 <strong>
-                                    {selectedDonation.foodType}
+                                    {
+                                        selectedDonation.foodType
+                                    }
                                 </strong>
 
                             </div>
@@ -962,9 +1427,13 @@ function DonorDashboard() {
 
                                 <strong>
 
-                                    {selectedDonation.quantity}
-                                    {" "}
-                                    {selectedDonation.quantityUnit}
+                                    {
+                                        selectedDonation.quantity
+                                    }{" "}
+
+                                    {
+                                        selectedDonation.quantityUnit
+                                    }
 
                                 </strong>
 
@@ -978,7 +1447,13 @@ function DonorDashboard() {
                                 </span>
 
                                 <strong>
-                                    {selectedDonation.preparationTime}
+
+                                    {
+                                        formatDate(
+                                            selectedDonation.preparationTime
+                                        )
+                                    }
+
                                 </strong>
 
                             </div>
@@ -991,7 +1466,13 @@ function DonorDashboard() {
                                 </span>
 
                                 <strong>
-                                    {selectedDonation.expiryTime}
+
+                                    {
+                                        formatDate(
+                                            selectedDonation.expiryTime
+                                        )
+                                    }
+
                                 </strong>
 
                             </div>
@@ -1004,7 +1485,13 @@ function DonorDashboard() {
                                 </span>
 
                                 <strong>
-                                    {selectedDonation.pickupStart}
+
+                                    {
+                                        formatDate(
+                                            selectedDonation.pickupStart
+                                        )
+                                    }
+
                                 </strong>
 
                             </div>
@@ -1017,7 +1504,13 @@ function DonorDashboard() {
                                 </span>
 
                                 <strong>
-                                    {selectedDonation.pickupEnd}
+
+                                    {
+                                        formatDate(
+                                            selectedDonation.pickupEnd
+                                        )
+                                    }
+
                                 </strong>
 
                             </div>
@@ -1030,7 +1523,11 @@ function DonorDashboard() {
                                 </span>
 
                                 <strong>
-                                    {selectedDonation.location}
+
+                                    {
+                                        selectedDonation.location
+                                    }
+
                                 </strong>
 
                             </div>
@@ -1043,7 +1540,11 @@ function DonorDashboard() {
                                 </span>
 
                                 <strong>
-                                    {selectedDonation.status}
+
+                                    {
+                                        selectedDonation.status
+                                    }
+
                                 </strong>
 
                             </div>
@@ -1053,7 +1554,7 @@ function DonorDashboard() {
 
                         {/* =================================================
                             RECEIVER INFORMATION
-                           ================================================= */}
+                        ================================================= */}
 
                         {selectedDonation.acceptedBy && (
 
@@ -1071,15 +1572,28 @@ function DonorDashboard() {
                                     </span>
 
                                     <strong>
-                                        {selectedDonation.acceptedBy}
+
+                                        {
+                                            getReceiverName(
+                                                selectedDonation
+                                            )
+                                        }
+
                                     </strong>
 
 
                                     {selectedDonation.acceptedAt && (
 
                                         <small>
+
                                             Accepted at{" "}
-                                            {selectedDonation.acceptedAt}
+
+                                            {
+                                                formatDate(
+                                                    selectedDonation.acceptedAt
+                                                )
+                                            }
+
                                         </small>
 
                                     )}
@@ -1093,9 +1607,9 @@ function DonorDashboard() {
 
                         {/* =================================================
                             PICKUP STATUS
-                           ================================================= */}
+                        ================================================= */}
 
-                        {selectedDonation.pickupStatus && (
+                        {selectedDonation.acceptedBy && (
 
                             <div className="donor-pickup-box">
 
@@ -1104,8 +1618,14 @@ function DonorDashboard() {
                                 </span>
 
                                 <strong>
+
                                     🚚{" "}
-                                    {selectedDonation.pickupStatus}
+
+                                    {
+                                        selectedDonation.pickupStatus ||
+                                        "Pending Pickup"
+                                    }
+
                                 </strong>
 
                             </div>
@@ -1114,8 +1634,43 @@ function DonorDashboard() {
 
 
                         {/* =================================================
+                            COMPLETED RESCUE
+                        ================================================= */}
+
+                        {selectedDonation.status ===
+                            "Completed" && (
+
+                            <div className="receiver-accepted-box">
+
+                                <div className="accepted-box-icon">
+                                    ✅
+                                </div>
+
+                                <div>
+
+                                    <span>
+                                        RESCUE STATUS
+                                    </span>
+
+                                    <strong>
+                                        Food successfully rescued
+                                    </strong>
+
+                                    <small>
+                                        This donation has been
+                                        completed successfully.
+                                    </small>
+
+                                </div>
+
+                            </div>
+
+                        )}
+
+
+                        {/* =================================================
                             DESCRIPTION
-                           ================================================= */}
+                        ================================================= */}
 
                         {selectedDonation.description && (
 
@@ -1126,15 +1681,17 @@ function DonorDashboard() {
                                 </span>
 
                                 <p>
-                                    {selectedDonation.description}
+
+                                    {
+                                        selectedDonation.description
+                                    }
+
                                 </p>
 
                             </div>
 
                         )}
 
-
-                        {/* DONE BUTTON */}
 
                         <button
                             className="dashboard-primary-btn modal-done-btn"
@@ -1156,4 +1713,3 @@ function DonorDashboard() {
 }
 
 export default DonorDashboard;
-
